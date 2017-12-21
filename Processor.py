@@ -48,12 +48,6 @@ class Processor:
     }
 
     @staticmethod
-    def setCURRENCY_ABBREV (currencyAbbrev):
-
-        Processor.CURRENCY_ABBREV = currencyAbbrev
-
-
-    @staticmethod
     def deleteNonProfessionals(fileName, newFileName):
 
         with \
@@ -85,21 +79,21 @@ class Processor:
             open('/Users/oscar/Desktop/test.csv',  'rU')  as respondents1, \
             open('/Users/oscar/Desktop/test1.csv', 'w') as respondents2:
 
-                writer = csv.writer(respondents2)
-                reader = csv.reader(respondents1)
+            writer = csv.writer(respondents2)
+            reader = csv.reader(respondents1)
 
-                for row in reader:
+            for row in reader:
 
-                    for colNr in range(len(row) -1):
+                for colNr in range(len(row) -1):
 
-                        if not row[colNr].isdigit():
+                    if not row[colNr].isdigit():
 
-                            row[colNr] = '"' + row[colNr] + '"'
+                        row[colNr] = '"' + row[colNr] + '"'
 
-                    writer.writerow(row)
+                writer.writerow(row)
 
     @staticmethod
-    def getStats(colName, fileName):
+    def getStatsOfAttribute(colName, fileName):
 
         with open(fileName, 'rU') as respondents:
 
@@ -142,30 +136,31 @@ class Processor:
 
     @staticmethod
     def deleteIfPresent(criteria, colName, fileName, newFileName):
+        """Delete a record who matches the criteria in the given column"""
 
         with \
             open(fileName,    'rU') as respondents, \
             open(newFileName, 'w') as newCSV_file:
 
-                reader         = csv.reader(respondents)
-                writer         = csv.writer(newCSV_file)
-                # Index of the column "colName"
-                colNameIndx    = Processor.findColumnIndx(colName, fileName)
-                delRowsCounter = 0 # number of rows that were deleted
+            reader         = csv.reader(respondents)
+            writer         = csv.writer(newCSV_file)
+            # Index of the column "colName"
+            colNameIndx    = Processor.findColumnIndx(colName, fileName)
+            delRowsCounter = 0 # number of rows that were deleted
 
-                # returns the headers or `None` if the input is empty
-                headers = next(reader, None)
-                if headers:
-                    writer.writerow(headers)
+            # returns the headers or `None` if the input is empty
+            headers = next(reader, None)
+            if headers:
+                writer.writerow(headers)
 
-                for row in reader:
-                    colCounter = 0
+            for row in reader:
+                colCounter = 0
 
-                    if row[colNameIndx] in criteria :
-                        delRowsCounter += 1
-                        continue
+                if row[colNameIndx] in criteria :
+                    delRowsCounter += 1
+                    continue
 
-                    writer.writerow(row)
+                writer.writerow(row)
 
 
         print("Respondents with "+colName+": "+", ".join(criteria)+" removed: " + str( delRowsCounter))
@@ -225,7 +220,7 @@ class Processor:
 
 ############### MAIN #
 
-Processor.deleteNonProfessionals("S_E_Survey.csv", "SE_professionals.csv")
+Processor.deleteNonProfessionals("S_E_Survey_Raw.csv", "SE_professionals.csv")
 
 Processor.deleteIfPresent(["NA"],
                            "Salary",
@@ -241,25 +236,44 @@ Processor.deleteIfPresent(["NA", "Bitcoin (btc)"],
 Processor.deleteIfPresent(["NA"],
                            "JobSatisfaction",
                            "SE_professionals_salaryPresent_currencyPresent.csv",
-                           "SE_professionals_salaryPresent_currencyPresent_JobSatisfactionPresent.csv")
+                           "SE_professionals_salaryPresent_currencyPresent_SatisfactionPresent1.csv")
+
+Processor.deleteIfPresent(["NA"],
+                           "CareerSatisfaction",
+                           "SE_professionals_salaryPresent_currencyPresent_SatisfactionPresent1.csv",
+                           "SE_professionals_salaryPresent_currencyPresent_SatisfactionPresent2.csv")
 
 
-Processor.createSalaryBands("SE_professionals_salaryPresent_currencyPresent_JobSatisfactionPresent.csv",
-                             "SE_professionals_salaryPresent_currencyPresent_JobSatisfactionPresent_salaryBands.csv")
+
+Processor.createSalaryBands("SE_professionals_salaryPresent_currencyPresent_SatisfactionPresent2.csv",
+                             "SE_professionals_salaryPresent_currencyPresent_SatisfactionPresent_salaryBands.csv")
 
 Processor.deleteIfPresent(["0"],
                            "SalaryBand",
-                           "SE_professionals_salaryPresent_currencyPresent_JobSatisfactionPresent_salaryBands.csv",
-                           "SE_professionals_salaryPresent_currencyPresent_JobSatisfactionPresent_salaryBands1.csv")
+                           "SE_professionals_salaryPresent_currencyPresent_SatisfactionPresent_salaryBands.csv",
+                           "SE_professionals_salaryPresent_currencyPresent_SatisfactionPresent_salaryBands1.csv")
 
-stats = Processor.getStats("SalaryBand", 'SE_professionals_salaryPresent_currencyPresent_JobSatisfactionPresent_salaryBands1.csv')
+
+countryStats = Processor.getStatsOfAttribute("Country", 'SE_professionals_salaryPresent_currencyPresent_SatisfactionPresent_salaryBands1.csv')
+nonUK_Countries = [];
+for country in countryStats.keys():
+    if country != "United Kingdom":
+        nonUK_Countries.append(country)
+
+
+
+# will leave only UK respondents
+Processor.deleteIfPresent(nonUK_Countries,
+                           "Country",
+                           "SE_professionals_salaryPresent_currencyPresent_SatisfactionPresent_salaryBands1.csv",
+                           "SE_Survey_PyCleaned.csv")
 
 print("Respondents in CSV:", Processor.respondents)
+
+stats = Processor.getStatsOfAttribute("Country", 'SE_Survey_PyCleaned.csv')
 
 res = ""
 for key, count in stats.items():
     res += key + " :  " + str(count) + "\n"
 
 print(res)
-
-# print (Processor.calcSalaryBand(Processor.calcUSD_salary('Indian rupees (?)', 952000.71)))
