@@ -74,6 +74,91 @@ class Processor:
             Processor.respondents = professionals_count
 
     @staticmethod
+    def groupDeveloperTypes(fileName, newFileName):
+
+        with \
+            open(fileName,    'rU') as respondents1, \
+            open(newFileName, 'w')  as respondents2:
+
+            reader = csv.reader(respondents1)
+            writer = csv.writer(respondents2)
+
+            # returns the headers or `None` if the input is empty
+            headers = next(reader, None)
+
+            if headers:
+
+                developerTypeIndx = Processor.findColumnIndx("DeveloperType", fileName)
+
+                # "type" : index in CSV header
+                devTypes = Processor.findUniqueDeveloperTypes(fileName, developerTypeIndx)
+                del headers[developerTypeIndx]
+
+                headers = Processor.addDeveloperTypesColumns(devTypes, headers, developerTypeIndx)
+
+                writer.writerow(headers)
+
+                devTypes = list(devTypes)
+
+                # two lists merged into dictionary ( columnName : columnIndex )
+                devTypeIndexes = dict(zip(devTypes, range(developerTypeIndx, len(devTypes) +  developerTypeIndx )))
+            else:
+                raise Exception("GroupDeveloperTypes: file empty")
+
+
+            for row in reader:
+
+                competencies = row[developerTypeIndx]
+                del row[developerTypeIndx]
+                competencies = competencies.split(';')
+                # trim DeveloperType strings
+                competencies = list(set(map((lambda comp: comp.strip()), competencies)))
+
+                row = Processor.addDeveloperTypesColumns([0] * len(devTypes), row, developerTypeIndx)
+
+                row = Processor.fillInCompetencies(competencies, row, devTypeIndexes)
+
+                writer.writerow(row)
+
+            print("Respondents' development competencies split in separate attributes")
+
+    @staticmethod
+    def findUniqueDeveloperTypes(fileName, developerTypeIndx):
+
+        developerTypes    = set()
+
+        with open(fileName,    'rU') as respondents:
+
+            reader = csv.reader(respondents)
+            next(reader, None) # skip the header
+
+            for row in reader:
+
+                respondentsCompetencies = row[developerTypeIndx].split(';')
+
+
+                # trim DeveloperType strings
+                respondentsCompetencies = set(map((lambda comp: comp.strip()), respondentsCompetencies))
+
+                developerTypes.update(list(respondentsCompetencies))
+
+        return list(developerTypes)
+
+    @staticmethod
+    def addDeveloperTypesColumns(devTypes, headerCSV, developerTypeIndx):
+
+        return headerCSV[:developerTypeIndx] + devTypes + headerCSV[developerTypeIndx:]
+
+    @staticmethod
+    def fillInCompetencies(competencies, row, devTypeIndexes):
+
+            for competency in competencies:
+
+                row[devTypeIndexes[competency]] = 1
+
+            return row
+
+    @staticmethod
     def makeNonNumericAttribsStrings():
         with \
             open('/Users/oscar/Desktop/test.csv',  'rU')  as respondents1, \
@@ -121,7 +206,6 @@ class Processor:
             reader     = csv.reader(respondents)
             colCounter = 0
 
-            roww = 5
             for row in reader:
                 roww = row
                 for column in row:
@@ -132,7 +216,7 @@ class Processor:
 
                 break # only title row
 
-            raise Exception("No index found for " + colName, roww)
+            raise Exception("No index found for " + colName)
 
     @staticmethod
     def deleteIfPresent(criteria, colName, fileName, newFileName):
@@ -270,10 +354,13 @@ Processor.deleteIfPresent(nonUK_Countries,
 
 print("Respondents in CSV:", Processor.respondents)
 
-stats = Processor.getStatsOfAttribute("Country", 'SE_Survey_PyCleaned.csv')
+Processor.groupDeveloperTypes("SE_Survey_PyCleaned.csv", "SE_Survey_PyCleaned1.csv")
 
-res = ""
-for key, count in stats.items():
-    res += key + " :  " + str(count) + "\n"
 
-print(res)
+# stats = Processor.getStatsOfAttribute("DeveloperType", 'SE_Survey_PyCleaned.csv')
+#
+# res = ""
+# for key, count in stats.items():
+#     res += key + " :  " + str(count) + "\n"
+#
+# print(res)
