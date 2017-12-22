@@ -74,7 +74,7 @@ class Processor:
             Processor.respondents = professionals_count
 
     @staticmethod
-    def groupDeveloperTypes(fileName, newFileName):
+    def groupDeveloperTypes(column, fileName, newFileName):
 
         with \
             open(fileName,    'rU') as respondents1, \
@@ -88,7 +88,7 @@ class Processor:
 
             if headers:
 
-                developerTypeIndx = Processor.findColumnIndx("DeveloperType", fileName)
+                developerTypeIndx = Processor.findColumnIndx(column, fileName)
 
                 # "type" : index in CSV header
                 devTypes = Processor.findUniqueDeveloperTypes(fileName, developerTypeIndx)
@@ -114,13 +114,13 @@ class Processor:
                 # trim DeveloperType strings
                 competencies = list(set(map((lambda comp: comp.strip()), competencies)))
 
-                row = Processor.addDeveloperTypesColumns([0] * len(devTypes), row, developerTypeIndx)
+                row = Processor.addDeveloperTypesColumns(["'0'"] * len(devTypes), row, developerTypeIndx)
 
                 row = Processor.fillInCompetencies(competencies, row, devTypeIndexes)
 
                 writer.writerow(row)
 
-            print("Respondents' development competencies split in separate attributes")
+            print("Respondents' "+column+" competencies split in separate attributes")
 
     @staticmethod
     def findUniqueDeveloperTypes(fileName, developerTypeIndx):
@@ -154,7 +154,7 @@ class Processor:
 
             for competency in competencies:
 
-                row[devTypeIndexes[competency]] = 1
+                row[devTypeIndexes[competency]] = "'1'"
 
             return row
 
@@ -341,7 +341,7 @@ Processor.deleteIfPresent(["0"],
 countryStats = Processor.getStatsOfAttribute("Country", 'SE_professionals_salaryPresent_currencyPresent_SatisfactionPresent_salaryBands1.csv')
 nonUK_Countries = [];
 for country in countryStats.keys():
-    if country != "United Kingdom":
+    if country != "United States":
         nonUK_Countries.append(country)
 
 
@@ -354,8 +354,12 @@ Processor.deleteIfPresent(nonUK_Countries,
 
 print("Respondents in CSV:", Processor.respondents)
 
-Processor.groupDeveloperTypes("SE_Survey_PyCleaned.csv", "SE_Survey_PyCleaned1.csv")
+Processor.groupDeveloperTypes("DeveloperType", "SE_Survey_PyCleaned.csv", "SE_Survey_PyCleaned1.csv")
+Processor.groupDeveloperTypes("HaveWorkedLanguage", "SE_Survey_PyCleaned1.csv", "SE_Survey_PyCleaned2.csv")
+Processor.groupDeveloperTypes("HaveWorkedFramework", "SE_Survey_PyCleaned2.csv", "SE_Survey_PyCleaned3.csv")
+Processor.groupDeveloperTypes("HaveWorkedDatabase", "SE_Survey_PyCleaned3.csv", "SE_Survey_PyCleaned4.csv")
 
+print("DON'T FORGET TO REMOVE DUPLICATE 'NA' COLUMNS THAT OCCURED AFTER SPLITTING")
 
 # stats = Processor.getStatsOfAttribute("DeveloperType", 'SE_Survey_PyCleaned.csv')
 #
