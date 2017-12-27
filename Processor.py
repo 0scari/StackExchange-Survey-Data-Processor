@@ -75,7 +75,10 @@ class Processor:
 
     @staticmethod
     def groupDeveloperTypes(column, fileName, newFileName):
-
+        """ A bit confusing name. What it does is splits values of the attribute("column" param) that have 
+            a nominal variety of concatenated string (e.g. "WebDeveloper, AppDeveloper") into seperate
+            attributes with values 1 or 0."""
+        
         with \
             open(fileName,    'rU') as respondents1, \
             open(newFileName, 'w')  as respondents2:
